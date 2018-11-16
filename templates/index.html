@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Caillou</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+    crossorigin="anonymous">
+  <style>
+    .lds-roller {
+      display: inline-block;
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+    .lds-roller div {
+      animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      transform-origin: 32px 32px;
+    }
+    .lds-roller div:after {
+      content: " ";
+      display: block;
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #000;
+      margin: -3px 0 0 -3px;
+    }
+    .lds-roller div:nth-child(1) {
+      animation-delay: -0.036s;
+    }
+    .lds-roller div:nth-child(1):after {
+      top: 50px;
+      left: 50px;
+    }
+    .lds-roller div:nth-child(2) {
+      animation-delay: -0.072s;
+    }
+    .lds-roller div:nth-child(2):after {
+      top: 54px;
+      left: 45px;
+    }
+    .lds-roller div:nth-child(3) {
+      animation-delay: -0.108s;
+    }
+    .lds-roller div:nth-child(3):after {
+      top: 57px;
+      left: 39px;
+    }
+    .lds-roller div:nth-child(4) {
+      animation-delay: -0.144s;
+    }
+    .lds-roller div:nth-child(4):after {
+      top: 58px;
+      left: 32px;
+    }
+    .lds-roller div:nth-child(5) {
+      animation-delay: -0.18s;
+    }
+    .lds-roller div:nth-child(5):after {
+      top: 57px;
+      left: 25px;
+    }
+    .lds-roller div:nth-child(6) {
+      animation-delay: -0.216s;
+    }
+    .lds-roller div:nth-child(6):after {
+      top: 54px;
+      left: 19px;
+    }
+    .lds-roller div:nth-child(7) {
+      animation-delay: -0.252s;
+    }
+    .lds-roller div:nth-child(7):after {
+      top: 50px;
+      left: 14px;
+    }
+    .lds-roller div:nth-child(8) {
+      animation-delay: -0.288s;
+    }
+    .lds-roller div:nth-child(8):after {
+      top: 45px;
+      left: 10px;
+    }
+    @keyframes lds-roller {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .score {
+      width: 64px;
+      height: 64px;
+      border-radius: 64px;
+      font-size: 1.6em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container my-4">
+    <div class="mb-4">
+      <h1>💎 Caillou</h1>
+    </div>
+    <div class="input-group input-group-lg mb-4">
+      <input type="text" class="form-control" id="input-query">
+      <div class="input-group-append">
+        <button class="btn btn-outline-dark" type="button" id="btn-search">🔎</button>
+      </div>
+    </div>
+    <div class="justify-content-center" style="display: none;" id="loader">
+      <div class="lds-roller">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+    <div class="row" id="products-grid"></div>
+  </div>
+  <template id="product-item">
+    <div class="col-sm-6 col-md-6 col-lg-4 mb-5">
+      <div class="card" style="height: 500px;">
+        <div class="d-flex justify-content-center align-items-center" style="height:400px; background-color: rgba(0,0,0,.125); overflow:hidden; text-align: center;">
+          <img style="max-width: 100%;" id="product-image">
+        </div>
+        <div class="card-body">
+          <h5 class="card-title" id="product-name" style="word-break: break-all;"></h5>
+          <div class="d-flex justify-content-center">
+            <div class="score d-flex justify-content-center align-items-center" style="background-color: #ccc;" id="product-score">
+              <span id="product-score-text"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <script>
+    const btnSearch = document.getElementById('btn-search')
+    const inputQuery = document.getElementById('input-query')
+    const loader = document.getElementById('loader')
+    const productsGrid = document.getElementById('products-grid')
+    const template = document.getElementById('product-item')
+    const scoreColors = [['#CF4241', '#FFFFFF'], ['#CC6942', '#000000'], ['#CA8E44', '#000000'],
+    ['#C8B146', '#FFFFFF'], ['#BAC648', '#FFFFFF'], ['#97C349', '#FFFFFF'], ['#76C14B', '#000000'],
+    ['#57BF4D', '#000000'], ['#4EBD62', '#FFFFFF'], ['#50BB80', '#FFFFFF']]
+
+    btnSearch.addEventListener('click', async () => await searchProducts())
+
+    async function searchProducts() {
+      clearProductsGrid()
+      showLoader()
+      const products = await fetchProducts(inputQuery.value)
+      appendProducts(products)
+      hideLoader()
+    }
+
+    async function fetchProducts(query) {
+      const response = await fetch(`/search?q=${query}`)
+      return await response.json()
+    }
+
+    function appendProducts(products) {
+      for (const product of products) {
+        const productItem = createProductItem(product)
+        productsGrid.appendChild(productItem)
+      }
+    }
+
+    function createProductItem(product) {
+      const item = document.importNode(template.content, true)
+      const name = item.getElementById('product-name')
+      const image = item.getElementById('product-image')
+      const score = item.getElementById('product-score')
+      const scoreText = item.getElementById('product-score-text')
+
+      name.textContent = product.name.length < 29 ? product.name :
+        `${product.name.substring(0, 29)}...`
+      name.title = product.name
+      image.src = product.image
+
+      if (product.errors.length > 0) {
+        scoreText.textContent = 'N/A'
+      } else {
+        const scoreColor = scoreColors[Math.round(product.score / 20)]
+        score.style.backgroundColor = scoreColor[0]
+        score.style.color = scoreColor[1]
+        scoreText.textContent = product.score
+      }
+
+      return item
+    }
+
+    //#region DOM Manipulation
+
+    function clearProductsGrid() {
+      productsGrid.innerHTML = ''
+    }
+
+    function hideLoader() {
+      loader.style.display = 'none';
+    }
+
+    function showLoader() {
+      loader.style.display = 'flex';
+    }
+
+    //#endregion
+  </script>
+</body>
+</html>
